@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Install Nix
+        # You may pin to the exact commit or the version.
+        # uses: cachix/install-nix-action@07da2520eebede906fbeefa9dd0a2b635323909d
+        uses: cachix/install-nix-action@v12
+        with:
+          nix_path: nixpkgs=channel:nixos-20.09
+          extra_nix_config: |
+            extra-platforms = aarch64-linux
+      - uses: myci-actions/add-deb-repo@4
+        with:
+          repo: deb http://http.us.debian.org/debian sid main non-free contrib
+          repo-name: debian-sid
+          keys: 04EE7237B7D453EC
+      - run: |
+          sudo apt -y install qemu-user-static
+      - name: Test binfmt availability
+        run: |
+          cat /proc/sys/fs/binfmt_misc/qemu-aarch64
+          /usr/bin/qemu-aarch64-static --version
+      - name: Build Image
+        run: |
+          nix-build release.nix -A sdImage
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sd-image.img
+          path: ./result/sd-image/*.img*
