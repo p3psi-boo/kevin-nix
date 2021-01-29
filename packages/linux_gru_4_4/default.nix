@@ -1,4 +1,4 @@
-{ stdenv, runCommand, fetchgit, linuxManualConfig,
+{ lib, stdenv, runCommand, fetchgit, linuxManualConfig,
   features ? {}, kernelPatches ? [], randstructSeed ? null }:
 
 # Additional features cannot be added to this kernel
@@ -8,7 +8,7 @@ let
   passthru = { features = {}; };
 
   drv = linuxManualConfig ({
-    inherit stdenv kernelPatches;
+    inherit lib stdenv kernelPatches;
 
     src = fetchgit {
       url = "https://chromium.googlesource.com/chromiumos/third_party/kernel/";
